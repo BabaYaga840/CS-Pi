@@ -9,5 +9,5 @@ table:
 methods:
   CS-Pi:          {sampler: cspi, k: [1.0, 10.0, 20.0, 50.0, 100.0], k_max: 20, tau: 1.0e-3, step_size: 0.1}
   Guidance:       {sampler: guidance, alpha: [0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3], step_size: 0.1}
-  Trust:          {sampler: trust, w: [0.01, 0.03, 0.1, 0.3], j_max: 5, step_size: 0.1}
+  Trust:          {sampler: trust, w: [0.01, 0.03, 0.1, 0.3, 1.0], j_max: 5, step_size: 0.1}
   Trust (linear): {sampler: trust, w: [0.02, 0.1], j_max: 5, schedule: linear, step_size: 0.1}

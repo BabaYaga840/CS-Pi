@@ -8,7 +8,7 @@ table:
   columns: {Safe-SR: success, Fully in support: fully_in_support, NFE: nfe}
   percent: [success]
 methods:
-  CS-Pi:      {sampler: cspi, k: [0.5, 1.0, 2.0, 5.0, 10.0, 20.0], k_max: 5, tau: 0.01, step_size: 0.5}
-  Guidance:   {sampler: guidance, alpha: [1.0, 3.0, 10.0, 30.0, 100.0], step_size: [0.05, 0.1, 0.2]}
+  CS-Pi:      {sampler: cspi, k: [0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0], k_max: 5, tau: 0.01, step_size: 0.5}
+  Guidance:   {sampler: guidance, alpha: [1.0, 3.0, 10.0, 30.0, 100.0], step_size: [0.05, 0.1, 0.2, 0.5]}
   Trust:      {sampler: trust, w: [0.01, 0.05, 0.1, 0.2], j_max: 5, step_size: 0.1}
   Projection: {sampler: projection, tau: 0.01, step_size: [0.25, 0.5, 1.0]}

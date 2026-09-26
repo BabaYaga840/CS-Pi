@@ -188,7 +188,7 @@ class SupportMask:
 
 @torch.no_grad()
 def rollout(sampler, params, model, norm, scenario, support=None, margin=0.01, problem=AvoidProblem):
-    """Closed-loop episode; returns per-episode metrics plus the chunks for logL scoring."""
+    """Closed-loop episode; returns per-episode metrics plus the sampled chunks x (for logL scoring)."""
     test = SCENARIOS[scenario]
     centers, radii = obstacle_tensors(test)
     pos = torch.tensor([START])
@@ -217,7 +217,7 @@ def rollout(sampler, params, model, norm, scenario, support=None, margin=0.01, p
                 n_iter=[i.get("n_iter", 0) for i in infos], n_history=[i.get("n_history", []) for i in infos],
                 fallback=sum(bool(i.get("fallback", False)) for i in infos), n_plans=len(infos),
                 fallback_flags=[bool(i.get("fallback", False)) for i in infos],
-                traj=traj.numpy(), chunks=torch.stack(chunks), obs=torch.stack(obs_ns))
+                traj=traj.numpy(), x=torch.stack(chunks), obs=torch.stack(obs_ns))
 
 
 def evaluate(sampler, params, model, norm, scenario, support=None, n_seeds=40, n_episodes=5, margin=0.01,
@@ -228,9 +228,7 @@ def evaluate(sampler, params, model, norm, scenario, support=None, n_seeds=40, n
         torch.manual_seed(s * 1000)
         np.random.seed(s * 1000)
         for _ in range(n_episodes):
-            r = rollout(sampler, params, model, norm, scenario, support, margin, problem)
-            r["x"] = r.pop("chunks")
-            out.append(r)
+            out.append(rollout(sampler, params, model, norm, scenario, support, margin, problem))
     return out
 
 

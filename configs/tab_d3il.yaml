@@ -1,5 +1,5 @@
 # tab:d3il-main -- 2D Avoidance, 6 scenarios x 200 closed-loop rollouts (40 seeds x 5 episodes).
-# Guidance / Trust / Projection hyperparameters: best macro Safe-SR in configs/hp_d3il.yaml.
+# Settings of swept methods: best macro Safe-SR in configs/hp_d3il.yaml (ties: fewer NFE).
 benchmark: avoid2d
 checkpoint: avoid2d
 units: [left, right, both, cluttered, narrow_passage, narrower_passage]
@@ -9,11 +9,11 @@ table:
   columns: {Safe-SR: success, Fully in support: fully_in_support, logL: logl_mean, NFE: nfe}
   percent: [success]
 methods:
-  CS-Pi:           {sampler: cspi, k: 1.0, k_max: 5, tau: 0.01, step_size: 0.5}
-  Projection:      {sampler: projection, tau: 0.01, step_size: 0.5}
+  CS-Pi:           {sampler: cspi, k: 20.0, k_max: 5, tau: 0.01, step_size: 0.5}
+  Projection:      {sampler: projection, tau: 0.01, step_size: 1.0}
   SafeDiffuser:    {sampler: safediffuser, n_steps: 2, lam: 2.0}
   SafeFlowMatcher: {sampler: safeflowmatcher, T_p: 1, T_c: 2, alpha: 2.0, eps: 5.0, rho: 0.3, slack: sfm, t_w: 0.5}
-  Guidance:        {sampler: guidance, alpha: 10.0, step_size: 0.1}
+  Guidance:        {sampler: guidance, alpha: 10.0, step_size: 0.2}
   Rejection:       {sampler: rejection, budget: 2000, tau: 0.01, step_size: 0.2}
   Trust:           {sampler: trust, w: 0.05, j_max: 5, step_size: 0.1}
   Unguided:        {sampler: unguided, step_size: 0.1}
