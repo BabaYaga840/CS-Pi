@@ -8,6 +8,7 @@ Training files (assets/data/*_train.pt) come in two layouts:
             every epoch draws `windows_per_traj` random windows q[t:t+H] per trajectory,
             conditioned on obs = (q[t], context).
 10% of the trajectories are held out; the EMA model with the lowest held-out loss is saved.
+`micro_batch` (optional) splits each batch for gradient accumulation on smaller GPUs.
 """
 import argparse
 import copy
@@ -61,12 +62,14 @@ def main():
         model.train()
         x, o, w = batches(0, cfg.get("windows_per_traj", 1))
         order = torch.randperm(x.shape[0])
+        mb = cfg.get("micro_batch", cfg["batch_size"])  # gradient accumulation for large batches
         for i in range(0, len(order) - cfg["batch_size"] + 1, cfg["batch_size"]):
-            b = order[i:i + cfg["batch_size"]]
-            loss = cfm_loss(model, norm.normalize(x[b].to(a.device)), norm.normalize_obs(o[b].to(a.device)),
-                            None if w is None else w[b].to(a.device))
             opt.zero_grad()
-            loss.backward()
+            for j in range(i, i + cfg["batch_size"], mb):
+                b = order[j:min(j + mb, i + cfg["batch_size"])]
+                loss = cfm_loss(model, norm.normalize(x[b].to(a.device)), norm.normalize_obs(o[b].to(a.device)),
+                                None if w is None else w[b].to(a.device))
+                (loss * len(b) / cfg["batch_size"]).backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             with torch.no_grad():
@@ -75,8 +78,9 @@ def main():
         sched.step()
         with torch.no_grad():
             xv, ov, wv = batches(1, cfg.get("windows_per_traj", 1))
-            vl = cfm_loss(ema, norm.normalize(xv.to(a.device)), norm.normalize_obs(ov.to(a.device)),
-                          None if wv is None else wv.to(a.device)).item()
+            vl = sum(cfm_loss(ema, norm.normalize(xv[j:j + mb].to(a.device)), norm.normalize_obs(ov[j:j + mb].to(a.device)),
+                              None if wv is None else wv[j:j + mb].to(a.device)).item() * len(xv[j:j + mb])
+                     for j in range(0, len(xv), mb)) / len(xv)
         if vl < best:
             best = vl
             save_prior(cfg["out"], ema, norm, cfg["model"], epoch=epoch + 1)

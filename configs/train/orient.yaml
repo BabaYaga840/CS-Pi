@@ -1,5 +1,5 @@
-# 3D-Orient prior: temporal U-Net on 16-step absolute joint chunks cut from 10k dense (64-step) MPD
-# EnvSpheres3D trajectories, conditioned on (q_t, q_goal).
+# 3D-Orient prior: temporal U-Net on 16-step absolute joint chunks cut from dense (64-step) MPD EnvSpheres3D
+# trajectories (the training split of 10k tasks), conditioned on (q_t, q_goal).
 data: assets/data/orient_train.pt         # windows: dense (N, 64, 7), context (N, 7) = q_goal
 out: checkpoints/orient.pt
 normalizer: minmax

@@ -8,5 +8,6 @@ model: {arch: unet, action_dim: 7, obs_dim: 10, horizon: 16, time_embed_dim: 64,
         cond_mode: obs_mlp, obs_embed_dim: 512}
 windows_per_traj: 8
 epochs: 2000
-batch_size: 1536
+batch_size: 1536                          # the paper used 4 GPUs x 384
+micro_batch: 384
 lr: 2.0e-4

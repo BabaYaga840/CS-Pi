@@ -7,7 +7,7 @@ table:
   columns: {Safe-SR: success, Goal reaching: goal, Collision: collision, NFE: nfe}
   percent: [success, goal, collision]
 methods:
-  CS-Pi:    {sampler: cspi, k: [5.0, 10.0, 50.0], k_max: 5, tau: 1.0e-3, step_size: 0.1}
+  CS-Pi:    {sampler: cspi, k: [5.0, 10.0, 50.0, 100.0], k_max: 5, tau: 1.0e-3, step_size: 0.1}
   Guidance: {sampler: guidance, alpha: [0.01, 0.05, 0.1, 0.2, 0.35], step_size: 0.1, problem: {post_slide: true}}
   Trust:    {sampler: trust, w: [0.005, 0.01, 0.05, 0.1], j_max: 5, stop_tol: 1.0e-3, step_size: 0.1,
              problem: {post_slide: true}}

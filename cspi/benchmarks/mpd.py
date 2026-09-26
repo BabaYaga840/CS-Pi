@@ -18,8 +18,25 @@ for _p in (MPD_ROOT, os.path.join(MPD_ROOT, "mpd", "torch_robotics")):
         sys.path.insert(0, _p)
 
 from mpd.utils.patches import numpy_monkey_patch  # noqa: E402
+import torchkin.forward_kinematics as _tk_fk  # noqa: E402
 
 numpy_monkey_patch()
+
+
+def _no_leak_factory(*args, _factory=_tk_fk.ForwardKinematicsFactory, **kwargs):
+    """torchkin keeps its forward outputs on the autograd context (`ctx.poses = output[-1]`), a reference
+    cycle that leaks every differentiable FK call. Backward only reads their values, so keep detached copies."""
+    out = _factory(*args, **kwargs)
+
+    def setup_context(ctx, inputs, output):
+        ctx.save_for_backward(*output[:-1])
+        ctx.poses = [p.detach() if p is not None else None for p in output[-1]]
+
+    out[0].setup_context = staticmethod(setup_context)
+    return out
+
+
+_tk_fk.ForwardKinematicsFactory = _no_leak_factory
 from mpd.parametric_trajectory.trajectory_bspline import ParametricTrajectoryBspline  # noqa: E402
 from torch_robotics import environments, robots  # noqa: E402
 from torch_robotics.tasks.tasks import PlanningTask  # noqa: E402
