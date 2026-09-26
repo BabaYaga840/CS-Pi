@@ -1,0 +1,21 @@
+# tab:earlystop -- CS-Pi stopping rules on 2D (11 values of k x 6 scenarios x 4 rules, 200 rollouts each).
+#   none      : run until feasible or K_max = 20
+#   n > 0.8/0.9: stop once the rollback depth n exceeds the threshold
+#   patience 5: stop when n closed < 5% of its gap to 1 over the last 5 iterations
+benchmark: avoid2d
+checkpoint: avoid2d
+units: [left, right, both, cluttered, narrow_passage, narrower_passage]
+eval: {n_seeds: 40, n_episodes: 5}
+logl: false
+table:
+  columns: {Safe-SR: success, NFE: nfe}
+  percent: [success]
+methods:
+  none:       {sampler: cspi, k: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 50.0, 75.0, 100.0], k_max: 20,
+               tau: 0.01, step_size: 0.5}
+  n>0.8:      {sampler: cspi, k: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 50.0, 75.0, 100.0], k_max: 20,
+               tau: 0.01, step_size: 0.5, n_threshold: 0.8}
+  n>0.9:      {sampler: cspi, k: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 50.0, 75.0, 100.0], k_max: 20,
+               tau: 0.01, step_size: 0.5, n_threshold: 0.9}
+  patience5:  {sampler: cspi, k: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 50.0, 75.0, 100.0], k_max: 20,
+               tau: 0.01, step_size: 0.5, patience: 5}

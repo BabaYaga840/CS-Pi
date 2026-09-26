@@ -1,0 +1,8 @@
+# 2D Avoidance prior: MLP on 16-step velocity chunks of the 80 hand-drawn demonstrations.
+data: assets/data/avoid2d_train.pt        # samples: x (N, 16, 2), obs (N, 4) = (x, y, goal_x, goal_y)
+out: checkpoints/avoid2d.pt
+normalizer: meanstd
+model: {arch: mlp, action_dim: 2, obs_dim: 4, horizon: 16, hidden_dim: 512, n_layers: 4, time_embed_dim: 64}
+epochs: 1000
+batch_size: 256
+lr: 1.0e-4

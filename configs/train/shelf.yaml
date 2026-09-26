@@ -1,0 +1,12 @@
+# Shelf prior: temporal U-Net (obs MLP encoder) on 16-step absolute joint chunks of multimodal
+# pick-and-place demonstrations, conditioned on (q_t, cube position); the place location is left free.
+# The loss is up-weighted near the grasp and the place: w_t = 1 + 6 exp(-d_cube^2 / 2 0.06^2) + 6 exp(-d_place^2 / ...).
+data: assets/data/shelf_train.pt          # windows: dense (N, 64, 7), context (N, 3) = cube, weight (N, 64)
+out: checkpoints/shelf.pt
+normalizer: minmax
+model: {arch: unet, action_dim: 7, obs_dim: 10, horizon: 16, time_embed_dim: 64, down_dims: [384, 768, 1536],
+        cond_mode: obs_mlp, obs_embed_dim: 512}
+windows_per_traj: 8
+epochs: 2000
+batch_size: 1536
+lr: 2.0e-4

@@ -1,0 +1,10 @@
+# tab:walltime (Spheres column) -- wall-clock per task (8 samples); one process on one node.
+benchmark: spheres
+checkpoint: spheres
+methods_from: tab_spheres.yaml
+only: [CS-Pi, Trust, Projection, Guidance, Unguided, SafeDiffuser, SafeFlowMatcher]
+units: [id]
+eval: {n_tasks: 20}
+logl: false
+table:
+  columns: {s per rollout: wall_s_per_rollout, NFE: nfe}

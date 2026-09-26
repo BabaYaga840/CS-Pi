@@ -1,0 +1,10 @@
+# Sphere-Avoid prior: temporal U-Net on 28 x 7 B-spline control points, conditioned on (q_start, q_goal).
+# Data: RRT-Connect solutions in the 10-sphere scene and in the 16-sphere scene (5k each), unconditioned
+# on which scene they come from.
+data: assets/data/spheres_train.pt        # samples: x (N, 28, 7), obs (N, 14)
+out: checkpoints/spheres.pt
+normalizer: minmax
+model: {arch: unet, action_dim: 7, obs_dim: 14, horizon: 28, time_embed_dim: 64, down_dims: [64, 128, 256]}
+epochs: 1000
+batch_size: 256
+lr: 1.0e-4

@@ -1,0 +1,10 @@
+# tab:walltime (Shelf column) -- wall-clock per rollout (4 samples, 24 plans); one process on one node.
+benchmark: shelf
+checkpoint: shelf
+methods_from: tab_shelf.yaml
+only: [CS-Pi, Trust, Projection, Guidance, Unguided, SafeDiffuser, SafeFlowMatcher]
+units: [clutter_combo]
+eval: {n_tasks: 6}
+logl: false
+table:
+  columns: {s per rollout: wall_s_per_rollout, NFE: nfe}

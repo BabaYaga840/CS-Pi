@@ -1,0 +1,7 @@
+assets/
+results/
+checkpoints/
+logs/
+__pycache__/
+*.egg-info/
+.claude/

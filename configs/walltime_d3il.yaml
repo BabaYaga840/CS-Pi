@@ -1,0 +1,10 @@
+# tab:walltime (2D column) -- wall-clock per rollout; run in one process on one node (eval.sh does).
+benchmark: avoid2d
+checkpoint: avoid2d
+methods_from: tab_d3il.yaml
+only: [CS-Pi, Trust, Projection, Guidance, Unguided, SafeDiffuser, SafeFlowMatcher]
+units: [both]
+eval: {n_seeds: 6, n_episodes: 5}
+logl: false
+table:
+  columns: {s per rollout: wall_s_per_rollout, NFE: nfe}

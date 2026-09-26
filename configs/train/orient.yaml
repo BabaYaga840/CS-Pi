@@ -1,0 +1,10 @@
+# 3D-Orient prior: temporal U-Net on 16-step absolute joint chunks cut from 10k dense (64-step) MPD
+# EnvSpheres3D trajectories, conditioned on (q_t, q_goal).
+data: assets/data/orient_train.pt         # windows: dense (N, 64, 7), context (N, 7) = q_goal
+out: checkpoints/orient.pt
+normalizer: minmax
+model: {arch: unet, action_dim: 7, obs_dim: 14, horizon: 16, time_embed_dim: 64, down_dims: [64, 128, 256]}
+windows_per_traj: 8
+epochs: 2000
+batch_size: 2048
+lr: 2.0e-4

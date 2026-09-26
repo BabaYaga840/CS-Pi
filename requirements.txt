@@ -1,0 +1,7 @@
+torch>=1.13
+numpy
+scipy
+pyyaml
+matplotlib
+huggingface_hub
+# plus MPD (mpd-splines-public, commit 3676cbf, with third_party/mpd.patch) for the three Panda benchmarks

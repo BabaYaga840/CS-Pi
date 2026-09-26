@@ -1,0 +1,114 @@
+diff --git a/mpd/datasets/trajectories_dataset_bspline.py b/mpd/datasets/trajectories_dataset_bspline.py
+index 47ee088..e40ab5c 100644
+--- a/mpd/datasets/trajectories_dataset_bspline.py
++++ b/mpd/datasets/trajectories_dataset_bspline.py
+@@ -15,7 +15,34 @@ from tqdm import tqdm
+ 
+ from mpd.datasets.normalization import DatasetNormalizer
+ from mpd.datasets.utils import CPU_Unpickler
+-from pb_ompl.pb_ompl import fit_bspline_to_path
++try:
++    from pb_ompl.pb_ompl import fit_bspline_to_path
++except (ImportError, NotImplementedError):
++    # Fallback: pure scipy/numpy implementation (used when OMPL bindings are not compiled).
++    # Needed only for dataset generation (reload_data=True); inference uses pre-built HDF5 files.
++    from scipy import interpolate
++
++    def _create_bspline_knots(num_control_points, degree):
++        d = degree
++        c = num_control_points
++        m = d + c
++        return np.pad(np.linspace(0., 1., m + 1 - 2 * d), d, 'edge')
++
++    def fit_bspline_to_path(
++            path, bspline_degree, bspline_num_control_points,
++            bspline_zero_vel_at_start_and_goal, bspline_zero_acc_at_start_and_goal,
++            debug=False, **kwargs):
++        knots = _create_bspline_knots(bspline_num_control_points, bspline_degree)
++        tck, u = interpolate.splprep(path.T, k=bspline_degree, t=knots, task=-1, quiet=True)
++        tt, cc, k = tck
++        cc = np.array(cc)
++        if bspline_zero_vel_at_start_and_goal:
++            cc[:, 0] = path[0].copy(); cc[:, -1] = path[-1].copy()
++            cc[:, 1] = cc[:, 0].copy(); cc[:, -2] = cc[:, -1].copy()
++        if bspline_zero_acc_at_start_and_goal:
++            cc[:, 2] = cc[:, 0].copy(); cc[:, -3] = cc[:, -1].copy()
++        tck[1] = cc.copy()
++        return tck
+ from torch_robotics import robots
+ from torch_robotics.robots import RobotPointMass2D
+ from torch_robotics.torch_kinematics_tree.geometrics.utils import (
+@@ -413,7 +440,7 @@ class TrajectoryDatasetBspline(Dataset, abc.ABC):
+                 hard_conds[horizon - 1] = cps_goal_normalized
+                 if self.planning_task.parametric_trajectory.zero_vel_at_start_and_goal:
+                     hard_conds[horizon - 2] = cps_goal_normalized
+-                if self.planning_task.plannerlf.zero_acc_at_start_and_goal:
++                if self.planning_task.parametric_trajectory.zero_acc_at_start_and_goal:
+                     hard_conds[horizon - 3] = cps_goal_normalized
+ 
+         return hard_conds
+diff --git a/mpd/parametric_trajectory/trajectory_bspline.py b/mpd/parametric_trajectory/trajectory_bspline.py
+index d4ef695..239e1d2 100644
+--- a/mpd/parametric_trajectory/trajectory_bspline.py
++++ b/mpd/parametric_trajectory/trajectory_bspline.py
+@@ -1,4 +1,3 @@
+-import isaacgym
+ 
+ from functools import partial
+ from typing import Tuple
+@@ -8,6 +7,11 @@ import einops
+ import numpy as np
+ import torch
+ 
++try:
++    import isaacgym
++except ImportError:
++    pass
++
+ from matplotlib import pyplot as plt
+ 
+ from mpd.parametric_trajectory.trajectory_base import ParametricTrajectoryBase
+diff --git a/mpd/parametric_trajectory/trajectory_waypoints.py b/mpd/parametric_trajectory/trajectory_waypoints.py
+index 1d8e1f3..798597d 100644
+--- a/mpd/parametric_trajectory/trajectory_waypoints.py
++++ b/mpd/parametric_trajectory/trajectory_waypoints.py
+@@ -1,14 +1,17 @@
+ from typing import Tuple
+ 
+ from matplotlib import pyplot as plt
+-
+-import isaacgym
+ from functools import partial
+ 
+ import einops
+ import numpy as np
+ import torch
+ 
++try:
++    import isaacgym
++except ImportError:
++    pass
++
+ from mpd.parametric_trajectory.trajectory_base import ParametricTrajectoryBase
+ from mpd.parametric_trajectory.phase_time import PhaseTimeLinear, PhaseTimeSigmoid
+ from torch_robotics.torch_utils.torch_utils import DEFAULT_TENSOR_ARGS
+diff --git a/mpd/torch_robotics/torch_robotics/visualizers/configuration_free_space.py b/mpd/torch_robotics/torch_robotics/visualizers/configuration_free_space.py
+index cbbe75e..bc1ab61 100644
+--- a/mpd/torch_robotics/torch_robotics/visualizers/configuration_free_space.py
++++ b/mpd/torch_robotics/torch_robotics/visualizers/configuration_free_space.py
+@@ -1,10 +1,14 @@
+ import einops
+ from scipy import ndimage
+ 
+-import isaacgym
+ import matplotlib
+ import numpy as np
+ import torch
++
++try:
++    import isaacgym
++except ImportError:
++    pass
+ from matplotlib import pyplot as plt
+ 
+ from mpd.parametric_trajectory.trajectory_bspline import ParametricTrajectoryBspline

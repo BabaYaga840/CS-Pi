@@ -1,0 +1,10 @@
+# tab:walltime (Orient column) -- wall-clock per rollout; one process on one node.
+benchmark: orient
+checkpoint: orient
+methods_from: tab_orient.yaml
+only: [CS-Pi + EE-prox, Trust, Guidance a=0.03, Unguided, SafeDiffuser, SafeFlowMatcher]
+units: [0]
+eval: {n_tasks: 10}
+logl: false
+table:
+  columns: {s per rollout: wall_s_per_rollout, NFE: nfe}

@@ -1,0 +1,17 @@
+# tab:mpd9 -- 3D-Orient, 30 tasks x seeds {0, 1, 2} (one receding-horizon rollout per task).
+benchmark: orient
+checkpoint: orient
+units: [0, 1, 2]
+logl_cap: 400                     # chunks scored per seed
+table:
+  columns: {Success: success, Goal reaching: goal, logL: logl_mean, Max EE step: max_ee_step, NFE: nfe}
+  percent: [success, goal]
+methods:
+  CS-Pi + EE-prox:  {sampler: cspi, k: 10.0, k_max: 3, tau: 1.0e-3, step_size: 0.1,
+                     problem: {ee_prox: true, lam_ee: 3000.0, beta: 1.0e+6, proj_steps: 5}}
+  Unguided:         {sampler: unguided, step_size: 0.1}
+  Guidance a=0.003: {sampler: guidance, alpha: 0.003, step_size: 0.1, problem: {lam_jl: 100.0}}
+  Guidance a=0.03:  {sampler: guidance, alpha: 0.03, step_size: 0.1, problem: {lam_jl: 100.0}}
+  Trust:            {sampler: trust, w: 0.001, j_max: 8, stop_tol: 1.0e-3, step_size: 0.1, problem: {lam_jl: 100.0}}
+  SafeDiffuser:     {sampler: safediffuser, n_steps: 10, lam: 5.0, state: tweedie}
+  SafeFlowMatcher:  {sampler: safeflowmatcher, T_p: 1, T_c: 5, alpha: 1.0, eps: 5.0, rho: 0.7, state: ode}

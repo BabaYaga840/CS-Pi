@@ -1,0 +1,16 @@
+# Fig. softhard-2d -- soft + hard composition on 2D: avoid every obstacle of `cluttered` (hard) while
+# keeping y near 0.7 (soft). 50 chunks from the start per seed; success = no contact and mean |y - 0.7| < 0.05.
+# CS-Pi runs its full budget (tau = 0), then projects onto the hard constraint.
+benchmark: avoid2d
+checkpoint: avoid2d
+units: [coupled_s0, coupled_s1, coupled_s2]
+eval: {n_episodes: 50, y_ref: 0.7, lam: 1.0}
+logl: false
+table:
+  columns: {Both met: success, Collision-free: collision_free, Preference met: preference, NFE: nfe}
+  percent: [success, collision_free, preference]
+methods:
+  CS-Pi:    {sampler: cspi, k: [1.0, 10.0, 20.0, 30.0, 100.0, 200.0], k_max: 10, tau: 0.0, step_size: 0.1}
+  Guidance: {sampler: guidance, alpha: [0.1, 0.3, 1.0, 3.0, 10.0], step_size: 0.1}
+  Trust:    {sampler: trust, w: [0.01, 0.05, 0.1], j_max: 5, step_size: 0.1}
+  Unguided: {sampler: unguided, step_size: 0.1}
