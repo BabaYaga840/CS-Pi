@@ -28,7 +28,9 @@ def collect(cfg):
 def fmt(v, pct):
     if v is None or (isinstance(v, float) and np.isnan(v)):
         return "—"
-    return f"{100 * v:.1f}" if pct else (f"{v:.0f}" if abs(v) >= 100 else f"{v:.2f}")
+    if pct:
+        return f"{100 * v:.1f}"
+    return f"{v:.2e}" if abs(v) >= 1e6 else (f"{v:.0f}" if abs(v) >= 100 else f"{v:.2f}")
 
 
 def build(cfg):
