@@ -1,6 +1,6 @@
 # tab:schedule-ablation -- how the rollback depth is chosen (2D, K_max = 5). The table reports how often
 # the terminal fallback fires (fraction of plan steps that end still infeasible).
-#   k/(k+delta)  : CS-Pi's adaptive depth
+#   adaptive     : CS-Pi's adaptive depth n = k / (k + delta)
 #   n = 0.5, 0.8 : fixed depth
 #   zero noise   : adaptive depth, but renoise with x_n = n g (no fresh noise)
 benchmark: avoid2d
@@ -12,6 +12,6 @@ table:
   columns: {Fallback rate: fallback_rate, Safe-SR: success, NFE: nfe}
   percent: [fallback_rate, success]
 methods:
-  k/(k+delta): {sampler: cspi, k: [5.0, 10.0, 20.0], k_max: 5, tau: 0.01, step_size: 0.5}
+  adaptive:    {sampler: cspi, k: [5.0, 10.0, 20.0], k_max: 5, tau: 0.01, step_size: 0.5}
   constant n:  {sampler: cspi, k: 10.0, n_schedule: [0.5, 0.8], k_max: 5, tau: 0.01, step_size: 0.5}
   zero noise:  {sampler: cspi, k: [5.0, 10.0, 20.0], fresh_noise: false, k_max: 5, tau: 0.01, step_size: 0.5}
