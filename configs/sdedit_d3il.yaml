@@ -6,8 +6,8 @@ units: [unconstrained]
 eval: {n_seeds: 40, n_episodes: 5}
 logl: false
 table:
-  columns: {Fully in support: fully_in_support, NFE: nfe}
-  percent: [fully_in_support]
+  columns: {Fully in support: fully_in_support, Waypoints in support: in_support, NFE: nfe}
+  percent: [fully_in_support, in_support]
 methods:
   Prior:  {sampler: unguided, step_size: 0.5}
   SDEdit: {sampler: cspi, k: 1.0, n_schedule: [0.5, 0.7, 0.9], k_max: [1, 3], tau: 0.0, step_size: 0.5,
