@@ -90,10 +90,18 @@ Hyperparameter sweeps run first because they select the settings used in the tab
 
 The hardware experiments (Franka + pi0.5) are not part of this release.
 
+**Protocol.** All rows of a table come from one run of its config. Every method that has a tunable
+setting uses the value with the best Safe-SR in the matching `hp_*` sweep (ties go to fewer network
+evaluations); the chosen values are written in the table configs.
+
 **Metrics.** Safe-SR counts rollouts that complete the task without violating the constraint; NFE
 is the number of network evaluations per rollout; logL is the mean log-likelihood the prior assigns
 to the method's samples, per dimension (higher is more in-distribution), from 24 backward Euler steps
-with a 6-probe Hutchinson divergence estimate. All rows of a table come from one run of its config.
+with a 6-probe Hutchinson divergence estimate.
+
+**Compute.** The Panda benchmarks run their kinematics on CPU. A 2D cell takes minutes, a Shelf cell
+up to two hours (Rejection); `bash eval.sh slurm` runs every cell in parallel. Give Sphere-Avoid cells
+about 64 GB of memory (`MEM=64G`).
 
 ## Training the priors
 
@@ -102,3 +110,8 @@ The released checkpoints are the ones used in the paper. To retrain them:
 ```bash
 bash train.sh              # all four priors (GPU recommended); bash train.sh slurm to submit
 ```
+
+Training data (downloaded with the assets): the 80 hand-drawn 2D demonstrations; 10k RRT-Connect
+trajectories in the 10- and 16-sphere scenes (Sphere-Avoid); MPD's EnvSpheres3D trajectories for
+10k tasks (3D-Orient); and 106k multimodal pick-and-place demonstrations from a parametric-primitive
+generator (Shelf, regenerated with the settings of the paper's dataset).

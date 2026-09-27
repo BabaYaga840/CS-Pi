@@ -8,6 +8,7 @@
 """
 import argparse
 import glob
+import json
 import os
 
 import numpy as np
@@ -17,14 +18,14 @@ from cspi.flow import load_prior
 from cspi.loglik import log_likelihood
 from cspi.run import ASSETS, RESULTS
 
-CSPI_CELLS = {  # benchmark label -> (result glob, checkpoint, k used by the cell)
-    "2D": ("tab_d3il/CS-Pi/*.pt", "avoid2d", 1.0),
-    "2D soft+hard": ("fig_softhard_2d/CS-Pi_k100.0/*.pt", "avoid2d", 100.0),
-    "Spheres ID": ("tab_spheres/CS-Pi/id.pt", "spheres", 100.0),
-    "Spheres OOD": ("tab_spheres/CS-Pi/ood.pt", "spheres", 100.0),
-    "Spheres ID k=10": ("hp_spheres/CS-Pi_k10.0/id.pt", "spheres", 10.0),
-    "Orient": ("tab_orient/CS-Pi + EE-prox/*.pt", "orient", 10.0),
-    "Shelf": ("tab_shelf/CS-Pi/*.pt", "shelf", 10.0),
+CSPI_CELLS = {  # benchmark label -> (result glob, checkpoint)
+    "2D": ("tab_d3il/CS-Pi/*.pt", "avoid2d"),
+    "2D soft+hard": ("fig_softhard_2d/CS-Pi_k100.0/*.pt", "avoid2d"),
+    "Spheres ID": ("tab_spheres/CS-Pi/id.pt", "spheres"),
+    "Spheres OOD": ("tab_spheres/CS-Pi/ood.pt", "spheres"),
+    "Spheres ID k=10": ("hp_spheres/CS-Pi_k10.0/id.pt", "spheres"),
+    "Orient": ("tab_orient/CS-Pi + EE-prox/*.pt", "orient"),
+    "Shelf": ("tab_shelf/CS-Pi/*.pt", "shelf"),
 }
 
 
@@ -51,10 +52,11 @@ def ndynamics():
     fig, ax = plt.subplots(1, 2, figsize=(9, 3.2))
     print("| benchmark | loops | n per iteration (mean over loops still running) | correction |d| first -> last |")
     print("|---|---|---|---|")
-    for name, (pattern, _, k) in CSPI_CELLS.items():
+    for name, (pattern, _) in CSPI_CELLS.items():
         loops = _loops(_records(pattern))
         if not loops:
             continue
+        k = json.load(open(glob.glob(os.path.join(RESULTS, pattern))[0][:-3] + ".json"))["params"]["k"]
         L = max(map(len, loops))
         n = [float(np.mean([lp[i] for lp in loops if len(lp) > i])) for i in range(L)]
         d = [k * (1 - v) / v for v in n]  # n = k / (k + d)
@@ -99,7 +101,7 @@ def fallback():
     print("| benchmark | fire rate | converged | fallback | projection | prior |  (median logL)")
     print("|---|---|---|---|---|---|")
     for name, pat in rows.items():
-        ck = CSPI_CELLS[name if name in CSPI_CELLS else "2D"][1]
+        ck = CSPI_CELLS[name][1]
         model = load_prior(os.path.join(ASSETS, "checkpoints", f"{ck}.pt"))[0]
         cs = [r for r in _records(pat.format("CS-Pi")) if r.get("score", True)]
         if not cs:
