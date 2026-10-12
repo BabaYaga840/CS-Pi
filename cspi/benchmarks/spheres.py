@@ -9,6 +9,8 @@ P          : Newton steps on the control points, x <- x - c(x) grad / ||grad||^2
 Metrics    : Safe-SR (cost < tau and endpoint error < 0.1 rad), averaged over tasks whose start and
              goal are themselves collision-free; NFE; logL of the control points.
 """
+import time
+
 import torch
 
 from cspi.benchmarks.mpd import MPDCost, jl_barrier, planning_task, self_barrier, sphere_barrier, waypoint_jacobian
@@ -103,6 +105,7 @@ def evaluate(sampler, params, model, norm, tasks, split="id", batch=8, proj_step
     torch.manual_seed(seed)
     out = []
     for q_s, q_g in zip(tasks["q_start"], tasks["q_goal"]):
+        t0 = time.perf_counter()
         feasible = float(cost(q_s.view(1, 1, -1))) < tau and float(cost(q_g.view(1, 1, -1))) < tau
         p = SplineProblem(model, norm, task, cost, q_s, q_g, batch, proj_steps, tau, cbf_groups)
         x, info = sampler(p, **params)
@@ -112,7 +115,7 @@ def evaluate(sampler, params, model, norm, tasks, split="id", batch=8, proj_step
         out.append(dict(endpoints_feasible=feasible, safe=((c < tau) & (goal_err < 0.1)).float().mean().item(),
                         collision_free=(c < tau).float().mean().item(), nfe=info["nfe"],
                         n_history=info.get("n_history", []), fallback=bool(info.get("fallback", False)),
-                        x=x.cpu(), obs=p.obs_n.cpu()))
+                        x=x.cpu(), obs=p.obs_n.cpu(), wall_s=time.perf_counter() - t0))
     return out
 
 

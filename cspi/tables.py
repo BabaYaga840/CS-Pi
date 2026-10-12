@@ -2,6 +2,7 @@
 
     python -m cspi.tables configs/tab_shelf.yaml            # markdown
     python -m cspi.tables configs/tab_shelf.yaml --latex    # LaTeX rows
+    python -m cspi.tables configs/tab_shelf.yaml --per-unit # one column group per scenario
 
 The config's `table` block chooses the columns ({header: metric}) and how units combine:
 `per_unit: false` (default) averages every metric over the units (macro average over
@@ -55,8 +56,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("config")
     ap.add_argument("--latex", action="store_true")
+    ap.add_argument("--per-unit", action="store_true", help="one column group per unit instead of the macro average")
     a = ap.parse_args()
-    head, body = build(load_config(a.config))
+    cfg = load_config(a.config)
+    if a.per_unit:
+        cfg.setdefault("table", {})["per_unit"] = True
+    head, body = build(cfg)
     if a.latex:
         for row in body:
             print(" & ".join(row) + r" \\")

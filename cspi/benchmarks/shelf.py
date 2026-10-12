@@ -11,6 +11,8 @@ Metrics    : per task, keep the sample with the lowest trajectory cost, then
              Safe-SR  = collision-free and picked and placed,
              goal reaching = picked and placed (kinematic replay of the cube), collision rate; NFE; logL.
 """
+import time
+
 import numpy as np
 import torch
 from torch_robotics.environments.primitives import MultiBoxField, ObjectField
@@ -130,6 +132,7 @@ def evaluate(sampler, params, model, norm, tasks, scenario, post_slide=False, se
         def make_problem(q):
             return ShelfProblem(model, norm, task, cost, q, cube, boxes, tau=tau, **problem_kw)
 
+        t0 = time.perf_counter()
         post = (lambda p, x: p.slide(x)) if post_slide else None
         r = rollout_chunks(make_problem, sampler, params, q_s, BATCH, N_EXEC, MAX_PLANS, max_dq=MAX_DQ, post=post)
         full = cost(r["q_traj"])
@@ -143,7 +146,7 @@ def evaluate(sampler, params, model, norm, tasks, scenario, post_slide=False, se
                         fallback_flags=[bool(i.get("fallback", False)) for i in r["infos"]],
                         q_traj=r["q_traj"],
                         x=r["chunks"].reshape(-1, *r["chunks"].shape[2:]),
-                        obs=r["obs"].reshape(-1, r["obs"].shape[-1])))
+                        obs=r["obs"].reshape(-1, r["obs"].shape[-1]), wall_s=time.perf_counter() - t0))
     return out
 
 

@@ -1,0 +1,11 @@
+# Terminal projection on vs. off (Sphere-Avoid L1 = id, L2 = ood). "On" is tab_spheres.yaml's CS-Pi row.
+benchmark: spheres
+checkpoint: spheres
+units: [id, ood]
+logl_cap: null
+table:
+  per_unit: true
+  columns: {SR: success, logL: logl_mean, NFE: nfe}
+  percent: [success]
+methods:
+  CS-Pi (no terminal proj.): {sampler: cspi, k: 50.0, k_max: 20, tau: 1.0e-3, step_size: 0.1, terminal_projection: false}

@@ -1,0 +1,11 @@
+# One k for every benchmark (k = 20) against the tuned k (tab_shelf.yaml: k = 50); k = 1 is the low-k
+# run for Fig. n-dynamics.
+benchmark: shelf
+checkpoint: shelf
+units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
+logl_cap: 400
+table:
+  columns: {Safe-SR: success, Goal reaching: goal, Collision: collision, logL: logl_mean, NFE: nfe}
+  percent: [success, goal, collision]
+methods:
+  CS-Pi: {sampler: cspi, k: [1.0, 20.0], k_max: 5, tau: 1.0e-3, step_size: 0.1}

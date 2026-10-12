@@ -1,0 +1,12 @@
+# Terminal projection on vs. off (2D). "On" is tab_d3il.yaml's CS-Pi row; this is the same setting without
+# the terminal projection, so chunks still infeasible after K_max iterations are executed as sampled.
+benchmark: avoid2d
+checkpoint: avoid2d
+units: [left, right, both, cluttered, narrow_passage, narrower_passage]
+eval: {n_seeds: 40, n_episodes: 5}
+logl_cap: 400
+table:
+  columns: {Safe-SR: success, Fully in support: fully_in_support, logL: logl_mean, NFE: nfe}
+  percent: [success]
+methods:
+  CS-Pi (no terminal proj.): {sampler: cspi, k: 20.0, k_max: 5, tau: 0.01, step_size: 0.5, terminal_projection: false}

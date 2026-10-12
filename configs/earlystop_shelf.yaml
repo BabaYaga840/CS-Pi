@@ -1,0 +1,14 @@
+# CS-Pi stopping rules on Shelf (same rules as earlystop_d3il.yaml). K_max = 20 rather than the table's 5,
+# so that the rules have iterations to cut (patience needs more than 5).
+benchmark: shelf
+checkpoint: shelf
+units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
+logl: false
+table:
+  columns: {Safe-SR: success, NFE: nfe}
+  percent: [success]
+methods:
+  none:      {sampler: cspi, k: [5.0, 10.0, 20.0, 50.0, 100.0], k_max: 20, tau: 1.0e-3, step_size: 0.1}
+  n>0.8:     {sampler: cspi, k: [5.0, 10.0, 20.0, 50.0, 100.0], k_max: 20, tau: 1.0e-3, step_size: 0.1, n_threshold: 0.8}
+  n>0.9:     {sampler: cspi, k: [5.0, 10.0, 20.0, 50.0, 100.0], k_max: 20, tau: 1.0e-3, step_size: 0.1, n_threshold: 0.9}
+  patience5: {sampler: cspi, k: [5.0, 10.0, 20.0, 50.0, 100.0], k_max: 20, tau: 1.0e-3, step_size: 0.1, patience: 5}

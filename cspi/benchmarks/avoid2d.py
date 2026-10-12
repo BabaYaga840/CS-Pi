@@ -9,6 +9,8 @@ P          : push every penetrating waypoint radially onto the obstacle surface.
 Metrics    : Safe-SR (goal reached, no test-obstacle contact), fraction of rollouts whose
              waypoints stay fully inside the dilated demonstration support, NFE, logL.
 """
+import time
+
 import numpy as np
 import torch
 
@@ -228,7 +230,9 @@ def evaluate(sampler, params, model, norm, scenario, support=None, n_seeds=40, n
         torch.manual_seed(s * 1000)
         np.random.seed(s * 1000)
         for _ in range(n_episodes):
+            t0 = time.perf_counter()
             out.append(rollout(sampler, params, model, norm, scenario, support, margin, problem))
+            out[-1]["wall_s"] = time.perf_counter() - t0
     return out
 
 

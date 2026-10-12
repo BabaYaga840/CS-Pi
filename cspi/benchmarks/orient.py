@@ -10,6 +10,8 @@ Guidance / Trust use the orientation cost plus a joint-limit hinge.
 Metrics    : success = some step within 10 cm of the goal position with ||R - R*||_F < 0.5;
              goal reaching = some step within 10 cm; max end-effector step (m); NFE; logL.
 """
+import time
+
 import torch
 
 from cspi.benchmarks.mpd import (chunk_barrier_rows, jl_barrier, joint_limit_violation, planning_task,
@@ -91,6 +93,7 @@ def evaluate(sampler, params, model, norm, tasks, ee_prox=False, seed=0, **probl
     torch.manual_seed(seed)
     out = []
     for q_s, q_g in zip(tasks["q_start"], tasks["q_goal"]):
+        t0 = time.perf_counter()
         refs = reference_path(model, norm, robot, q_s, q_g) if ee_prox else None
         plan = [0]
 
@@ -109,7 +112,7 @@ def evaluate(sampler, params, model, norm, tasks, ee_prox=False, seed=0, **probl
                         joint_limits_ok=float(joint_limit_violation(q[None], robot)) < 1e-3,
                         n_history=[i.get("n_history", []) for i in r["infos"]],
                         fallback_flags=[bool(i.get("fallback", False)) for i in r["infos"]], q_traj=q,
-                        x=r["chunks"][:, 0], obs=r["obs"][:, 0]))
+                        x=r["chunks"][:, 0], obs=r["obs"][:, 0], wall_s=time.perf_counter() - t0))
     return out
 
 

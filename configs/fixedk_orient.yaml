@@ -1,0 +1,12 @@
+# One k for every benchmark (k = 20) against the tuned k (tab_orient.yaml: k = 10); k = 1 is the low-k
+# run for Fig. n-dynamics.
+benchmark: orient
+checkpoint: orient
+units: [0, 1, 2]
+logl_cap: 400
+table:
+  columns: {Success: success, Goal reaching: goal, logL: logl_mean, Max EE step: max_ee_step, NFE: nfe}
+  percent: [success, goal]
+methods:
+  CS-Pi + EE-prox: {sampler: cspi, k: [1.0, 20.0], k_max: 3, tau: 1.0e-3, step_size: 0.1,
+                    problem: {ee_prox: true, lam_ee: 3000.0, beta: 1.0e+6, proj_steps: 5}}
