@@ -1,0 +1,11 @@
+# k-sweep under the main protocol: tab_d3il.yaml's CS-Pi row with only k changed.
+benchmark: avoid2d
+checkpoint: avoid2d
+units: [left, right, both, cluttered, narrow_passage, narrower_passage]
+eval: {n_seeds: 40, n_episodes: 5}
+logl_cap: 400
+table:
+  columns: {Safe-SR: success, Fully in support: fully_in_support, logL: logl_mean, NFE: nfe, Fire rate: fallback_rate}
+  percent: [success, fallback_rate]
+methods:
+  CS-Pi: {sampler: cspi, k: [5.0, 10.0, 20.0, 50.0, 100.0], k_max: 5, tau: 0.01, step_size: 0.5}

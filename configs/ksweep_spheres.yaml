@@ -1,0 +1,11 @@
+# k-sweep under the main protocol: tab_spheres.yaml's CS-Pi row with only k changed (L1 = id, L2 = ood).
+benchmark: spheres
+checkpoint: spheres
+units: [id, ood]
+logl_cap: null
+table:
+  per_unit: true
+  columns: {SR: success, logL: logl_mean, NFE: nfe, Fire rate: fallback_rate}
+  percent: [success, fallback_rate]
+methods:
+  CS-Pi: {sampler: cspi, k: [1.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0], k_max: 20, tau: 1.0e-3, step_size: 0.1}
