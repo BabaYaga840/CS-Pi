@@ -1,0 +1,13 @@
+# Shelf k-sweep over seeds: ksweep_shelf.yaml (tab_shelf.yaml's CS-Pi row, only k changed) repeated with
+# torch seeds 0, 1, 2 (ksweep_shelf.yaml uses the default seed 42). Single Shelf runs differ by several
+# points between identical runs, so report mean +- SE over seeds.
+benchmark: shelf
+checkpoint: shelf
+units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
+logl_cap: 400
+table:
+  columns: {Safe-SR: success, Goal reaching: goal, Collision: collision, logL: logl_mean, NFE: nfe, Fire rate: fallback_rate}
+  percent: [success, goal, collision, fallback_rate]
+methods:
+  CS-Pi: {sampler: cspi, k: [5.0, 10.0, 20.0, 50.0, 100.0], k_max: 5, tau: 1.0e-3, step_size: 0.1,
+          problem: {seed: [0, 1, 2]}}
