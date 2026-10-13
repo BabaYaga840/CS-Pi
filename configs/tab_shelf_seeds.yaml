@@ -1,0 +1,97 @@
+# tab:shelf over seeds: every non-CS-Pi row of tab_shelf.yaml unchanged, repeated with torch seeds 0, 1, 2
+# (tab_shelf.yaml uses the default seed 42; CS-Pi's seeds are in ksweep_shelf_seeds.yaml). Report mean +- SE.
+benchmark: shelf
+checkpoint: shelf
+units:
+- clutter_combo
+- tall_table_pillar
+- two_flankers_top
+- mid_rung_neighbor_E
+- low_rung_neighbor_E
+logl_cap: 400
+table:
+  columns:
+    Safe-SR: success
+    Goal reaching: goal
+    Collision: collision
+    logL: logl_mean
+    NFE: nfe
+  percent:
+  - success
+  - goal
+  - collision
+methods:
+  Projection:
+    sampler: projection
+    tau: 0.001
+    step_size: 0.1
+    problem:
+      seed:
+      - 0
+      - 1
+      - 2
+  Rejection:
+    sampler: rejection
+    budget: 100
+    tau: 0.001
+    step_size: 0.1
+    problem:
+      seed:
+      - 0
+      - 1
+      - 2
+  Guidance:
+    sampler: guidance
+    alpha: 0.1
+    step_size: 0.1
+    problem:
+      post_slide: true
+      seed:
+      - 0
+      - 1
+      - 2
+  Trust:
+    sampler: trust
+    w: 0.05
+    j_max: 5
+    stop_tol: 0.001
+    step_size: 0.1
+    problem:
+      post_slide: true
+      seed:
+      - 0
+      - 1
+      - 2
+  Unguided:
+    sampler: unguided
+    step_size: 0.1
+    problem:
+      seed:
+      - 0
+      - 1
+      - 2
+  SafeFlowMatcher:
+    sampler: safeflowmatcher
+    T_p: 10
+    T_c: 8
+    alpha: 0.07
+    eps: 5.0
+    rho: 0.7
+    state: tweedie
+    problem:
+      cbf_groups: obs+jl+self
+      seed:
+      - 0
+      - 1
+      - 2
+  SafeDiffuser:
+    sampler: safediffuser
+    n_steps: 10
+    lam: 200.0
+    state: tweedie
+    problem:
+      cbf_groups: obs+jl
+      seed:
+      - 0
+      - 1
+      - 2
