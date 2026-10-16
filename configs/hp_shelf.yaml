@@ -1,6 +1,7 @@
 # tab:hp-shelfcoupled (Shelf part) -- sweeps on Shelf (same protocol as tab_shelf.yaml).
 benchmark: shelf
-checkpoint: shelf
+policy: {type: flow, checkpoint: shelf}
+constraint: {type: chunk_collision, proj_steps: 6, beta: 1.0, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
 logl: false
 table:
@@ -8,6 +9,6 @@ table:
   percent: [success, goal, collision]
 methods:
   CS-Pi:    {sampler: cspi, k: [5.0, 10.0, 50.0, 100.0], k_max: 5, tau: 1.0e-3, step_size: 0.1}
-  Guidance: {sampler: guidance, alpha: [0.01, 0.05, 0.1, 0.2, 0.35], step_size: 0.1, problem: {post_slide: true}}
+  Guidance: {sampler: guidance, alpha: [0.01, 0.05, 0.1, 0.2, 0.35], step_size: 0.1, post_project: true}
   Trust:    {sampler: trust, w: [0.005, 0.01, 0.05, 0.1], j_max: 5, stop_tol: 1.0e-3, step_size: 0.1,
-             problem: {post_slide: true}}
+             post_project: true}

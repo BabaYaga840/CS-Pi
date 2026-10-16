@@ -4,7 +4,8 @@
 #   n = 0.5, 0.8 : fixed depth
 #   zero noise   : adaptive depth, but renoise with x_n = n g (no fresh noise)
 benchmark: avoid2d
-checkpoint: avoid2d
+policy: {type: flow, checkpoint: avoid2d}
+constraint: {type: obstacles_2d, margin: 0.01, guide_temperature: 0.02, guide_margin: 0.005}
 units: [left, right, both, cluttered, narrow_passage, narrower_passage]
 eval: {n_seeds: 40, n_episodes: 5}
 logl_cap: 400

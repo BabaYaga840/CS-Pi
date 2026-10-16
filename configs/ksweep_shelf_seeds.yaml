@@ -2,7 +2,8 @@
 # torch seeds 0, 1, 2 (ksweep_shelf.yaml uses the default seed 42). Single Shelf runs differ by several
 # points between identical runs, so report mean +- SE over seeds.
 benchmark: shelf
-checkpoint: shelf
+policy: {type: flow, checkpoint: shelf}
+constraint: {type: chunk_collision, proj_steps: 6, beta: 1.0, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
 logl_cap: 400
 table:
@@ -10,4 +11,4 @@ table:
   percent: [success, goal, collision, fallback_rate]
 methods:
   CS-Pi: {sampler: cspi, k: [5.0, 10.0, 20.0, 50.0, 100.0], k_max: 5, tau: 1.0e-3, step_size: 0.1,
-          problem: {seed: [0, 1, 2]}}
+          eval: {seed: [0, 1, 2]}}

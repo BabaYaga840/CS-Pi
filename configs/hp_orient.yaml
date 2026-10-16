@@ -1,7 +1,9 @@
 # Orient hyperparameters -- CS-Pi proximal weight beta, guidance alpha, and Trust with / without
 # the joint-limit term in its cost (same protocol as tab_orient.yaml).
 benchmark: orient
-checkpoint: orient
+policy: {type: flow, checkpoint: orient}
+constraint: {type: orientation_lock, lam_orient: 10.0, lam_ee: 3000.0, lam_jl: 100.0, beta: 1.0e+6,
+             proj_steps: 5, cbf_groups: orient+jl}
 units: [0, 1, 2]
 logl: false
 table:
@@ -9,8 +11,8 @@ table:
   percent: [success, goal, joint_limits_ok]
 methods:
   CS-Pi + EE-prox: {sampler: cspi, k: 10.0, k_max: 3, tau: 1.0e-3, step_size: 0.1,
-                    problem: {ee_prox: true, lam_ee: 3000.0, beta: [1.0e+3, 1.0e+5, 1.0e+6], proj_steps: 5}}
+                    eval: {ee_prox: true}, constraint: {lam_ee: 3000.0, beta: [1.0e+3, 1.0e+5, 1.0e+6], proj_steps: 5}}
   Guidance:        {sampler: guidance, alpha: [0.001, 0.003, 0.01, 0.03, 0.1], step_size: 0.1,
-                    problem: {lam_jl: 100.0}}
+                    constraint: {lam_jl: 100.0}}
   Trust:           {sampler: trust, w: 0.001, j_max: 8, stop_tol: 1.0e-3, step_size: 0.1,
-                    problem: {lam_jl: [0.0, 100.0]}}
+                    constraint: {lam_jl: [0.0, 100.0]}}

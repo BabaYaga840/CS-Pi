@@ -1,8 +1,8 @@
-"""Print a paper table from the cells written by cspi.run.
+"""Print a paper table from the cells written by cspi.core.run.
 
-    python -m cspi.tables configs/tab_shelf.yaml            # markdown
-    python -m cspi.tables configs/tab_shelf.yaml --latex    # LaTeX rows
-    python -m cspi.tables configs/tab_shelf.yaml --per-unit # one column group per scenario
+    python -m cspi.core.tables configs/tab_shelf.yaml            # markdown
+    python -m cspi.core.tables configs/tab_shelf.yaml --latex    # LaTeX rows
+    python -m cspi.core.tables configs/tab_shelf.yaml --per-unit # one column group per scenario
 
 The config's `table` block chooses the columns ({header: metric}) and how units combine:
 `per_unit: false` (default) averages every metric over the units (macro average over
@@ -15,7 +15,7 @@ import os
 
 import numpy as np
 
-from cspi.run import RESULTS, expand, load_config
+from cspi.core.run import RESULTS, expand, load_config
 
 
 def collect(cfg):

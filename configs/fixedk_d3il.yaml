@@ -1,7 +1,8 @@
 # One k for every benchmark: tab_d3il.yaml's CS-Pi row (terminal projection on, K_max 5, 6 scenarios x
 # 200 rollouts, same seeds) with k = 50.
 benchmark: avoid2d
-checkpoint: avoid2d
+policy: {type: flow, checkpoint: avoid2d}
+constraint: {type: obstacles_2d, margin: 0.01, guide_temperature: 0.02, guide_margin: 0.005}
 units: [left, right, both, cluttered, narrow_passage, narrower_passage]
 eval: {n_seeds: 40, n_episodes: 5}
 logl_cap: 400

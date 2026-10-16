@@ -1,7 +1,8 @@
 # Trust Sampling on Shelf: step size w x inner steps J, with and without the surface-sliding
 # post-projection that tab_shelf.yaml's Trust row uses (post_slide: false = no terminal projection).
 benchmark: shelf
-checkpoint: shelf
+policy: {type: flow, checkpoint: shelf}
+constraint: {type: chunk_collision, proj_steps: 6, beta: 1.0, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
 logl_cap: 400
 table:
@@ -9,4 +10,4 @@ table:
   percent: [success, goal, collision]
 methods:
   Trust: {sampler: trust, w: [0.005, 0.01, 0.05, 0.1], j_max: [2, 5, 10], stop_tol: 1.0e-3, step_size: 0.1,
-          problem: {post_slide: [false, true]}}
+          post_project: [false, true]}

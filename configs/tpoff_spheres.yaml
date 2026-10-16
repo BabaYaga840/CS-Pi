@@ -1,6 +1,7 @@
 # Terminal projection on vs. off (Sphere-Avoid L1 = id, L2 = ood). "On" is tab_spheres.yaml's CS-Pi row.
 benchmark: spheres
-checkpoint: spheres
+policy: {type: flow, checkpoint: spheres}
+constraint: {type: spline_collision, proj_steps: 10, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [id, ood]
 logl_cap: null
 table:

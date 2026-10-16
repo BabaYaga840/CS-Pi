@@ -1,6 +1,7 @@
 # tab:walltime (2D column) -- wall-clock per rollout; run in one process on one node (eval.sh does).
 benchmark: avoid2d
-checkpoint: avoid2d
+policy: {type: flow, checkpoint: avoid2d}
+constraint: {type: obstacles_2d, margin: 0.01, guide_temperature: 0.02, guide_margin: 0.005}
 methods_from: tab_d3il.yaml
 only: [CS-Pi, Trust, Projection, Guidance, Unguided, SafeDiffuser, SafeFlowMatcher]
 units: [both]

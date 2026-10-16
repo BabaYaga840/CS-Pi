@@ -2,9 +2,10 @@
 # keeping y near 0.7 (soft). 50 chunks from the start per seed; success = no contact and mean |y - 0.7| < 0.05.
 # CS-Pi runs its full budget (tau = 0), then projects onto the hard constraint.
 benchmark: avoid2d
-checkpoint: avoid2d
+policy: {type: flow, checkpoint: avoid2d}
+constraint: {type: coupled_2d, y_ref: 0.7, lam: 1.0, margin: 0.005}
 units: [coupled_s0, coupled_s1, coupled_s2]
-eval: {n_episodes: 50, y_ref: 0.7, lam: 1.0}
+eval: {n_episodes: 50}
 logl: false
 table:
   columns: {Both met: success, Collision-free: collision_free, Preference met: preference, NFE: nfe}

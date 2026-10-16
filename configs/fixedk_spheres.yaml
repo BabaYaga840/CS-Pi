@@ -1,6 +1,7 @@
 # One k for every benchmark (k = 20), against each benchmark's tuned k (tab_spheres.yaml: k = 50).
 benchmark: spheres
-checkpoint: spheres
+policy: {type: flow, checkpoint: spheres}
+constraint: {type: spline_collision, proj_steps: 10, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [id, ood]
 logl_cap: null
 table:

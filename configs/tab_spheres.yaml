@@ -1,7 +1,8 @@
 # tab:spheres -- Sphere-Avoid, 120 tasks x 8 samples, in-distribution (10 spheres) and OOD (16 spheres).
 # Settings of swept methods: best ID Safe-SR in configs/hp_spheres.yaml (ties: fewer NFE).
 benchmark: spheres
-checkpoint: spheres
+policy: {type: flow, checkpoint: spheres}
+constraint: {type: spline_collision, proj_steps: 10, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [id, ood]
 logl_cap: null                    # score every sample of the endpoint-feasible tasks
 table:
@@ -12,10 +13,10 @@ methods:
   CS-Pi:           {sampler: cspi, k: 50.0, k_max: 20, tau: 1.0e-3, step_size: 0.1}
   Projection:      {sampler: projection, tau: 1.0e-3, step_size: 0.1}
   SafeFlowMatcher: {sampler: safeflowmatcher, T_p: 2, T_c: 10, alpha: 0.5, eps: 20.0, rho: 0.9, delta: 0.03,
-                    state: tweedie, slack: 0.5, problem: {cbf_groups: obs+jl+self}}
+                    state: tweedie, slack: 0.5, constraint: {cbf_groups: obs+jl+self}}
   Rejection:       {sampler: rejection, budget: 50, tau: 1.0e-3, step_size: 0.1}
   Guidance:        {sampler: guidance, alpha: 0.01, step_size: 0.1}
   SafeDiffuser:    {sampler: safediffuser, n_steps: 10, lam: 100.0, state: tweedie, slack: 1.0,
-                    problem: {cbf_groups: obs+jl}}
+                    constraint: {cbf_groups: obs+jl}}
   Unguided:        {sampler: unguided, step_size: 0.1}
   Trust:           {sampler: trust, w: 0.3, j_max: 5, step_size: 0.1}

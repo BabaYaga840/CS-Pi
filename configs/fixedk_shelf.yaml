@@ -1,7 +1,8 @@
 # One k for every benchmark (k = 20) against the tuned k (tab_shelf.yaml: k = 50); k = 1 is the low-k
 # run for Fig. n-dynamics.
 benchmark: shelf
-checkpoint: shelf
+policy: {type: flow, checkpoint: shelf}
+constraint: {type: chunk_collision, proj_steps: 6, beta: 1.0, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
 logl_cap: 400
 table:

@@ -1,6 +1,8 @@
 # k-sweep under the main protocol: tab_orient.yaml's CS-Pi + EE-prox row with only k changed.
 benchmark: orient
-checkpoint: orient
+policy: {type: flow, checkpoint: orient}
+constraint: {type: orientation_lock, lam_orient: 10.0, lam_ee: 3000.0, lam_jl: 100.0, beta: 1.0e+6,
+             proj_steps: 5, cbf_groups: orient+jl}
 units: [0, 1, 2]
 logl_cap: 400
 table:
@@ -8,4 +10,4 @@ table:
   percent: [success, goal]
 methods:
   CS-Pi + EE-prox: {sampler: cspi, k: [1.0, 5.0, 10.0, 20.0, 50.0], k_max: 3, tau: 1.0e-3, step_size: 0.1,
-                    problem: {ee_prox: true, lam_ee: 3000.0, beta: 1.0e+6, proj_steps: 5}}
+                    eval: {ee_prox: true}, constraint: {lam_ee: 3000.0, beta: 1.0e+6, proj_steps: 5}}

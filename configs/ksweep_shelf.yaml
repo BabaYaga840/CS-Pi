@@ -1,6 +1,7 @@
 # k-sweep under the main protocol: tab_shelf.yaml's CS-Pi row with only k changed.
 benchmark: shelf
-checkpoint: shelf
+policy: {type: flow, checkpoint: shelf}
+constraint: {type: chunk_collision, proj_steps: 6, beta: 1.0, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
 logl_cap: 400
 table:

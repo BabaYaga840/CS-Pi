@@ -3,7 +3,8 @@
 #   n > 0.8/0.9: stop once the rollback depth n exceeds the threshold
 #   patience 5: stop when n closed < 5% of its gap to 1 over the last 5 iterations
 benchmark: avoid2d
-checkpoint: avoid2d
+policy: {type: flow, checkpoint: avoid2d}
+constraint: {type: obstacles_2d, margin: 0.01, guide_temperature: 0.02, guide_margin: 0.005}
 units: [left, right, both, cluttered, narrow_passage, narrower_passage]
 eval: {n_seeds: 40, n_episodes: 5}
 logl: false

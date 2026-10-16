@@ -19,9 +19,9 @@ import os
 import numpy as np
 import torch
 
-from cspi.flow import load_prior
+from cspi.policies.flow import load_prior
 from cspi.loglik import log_likelihood
-from cspi.run import ASSETS, RESULTS
+from cspi.core.run import ASSETS, RESULTS
 
 CSPI_CELLS = {  # benchmark label -> (result glob, checkpoint)
     "2D": ("tab_d3il/CS-Pi/*.pt", "avoid2d"),

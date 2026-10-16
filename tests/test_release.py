@@ -13,11 +13,11 @@ import numpy as np
 import pytest
 import torch
 
-from cspi import cbf, samplers
-from cspi.flow import load_prior
+from cspi.baselines import cbf
+from cspi.core import registry
+from cspi.policies.flow import load_flow_policy
 
 ASSETS = os.environ.get("CSPI_ASSETS", "assets")
-SAMPLERS = dict(samplers.SAMPLERS, **cbf.SAMPLERS)
 GOLDEN = torch.load(os.path.join(ASSETS, "golden.pt")) if os.path.exists(os.path.join(ASSETS, "golden.pt")) else []
 
 
@@ -36,41 +36,48 @@ def test_qp_solver():
 
 
 def _replay(case):
+    """Rebuild the golden case's (policy, constraint) pair with the release API and rerun its sampler."""
     b, pk = case["benchmark"], dict(case["problem"])
-    model, norm, _ = load_prior(os.path.join(ASSETS, "checkpoints", f"{b}.pt"))
+    policy = load_flow_policy(os.path.join(ASSETS, "checkpoints", f"{b}.pt"))
     post = pk.pop("post_slide", False)
     if b == "avoid2d":
         from cspi.benchmarks import avoid2d as B
-        p = B.AvoidProblem(model, norm, torch.tensor([case["pos"]]), B.SCENARIOS[case["scenario"]])
-        decode = p.actions
+        from cspi.constraints.obstacles_2d import Obstacles2D
+        pos = torch.tensor([case["pos"]])
+        p = policy.condition(torch.cat([pos, torch.tensor([B.GOAL])], -1))
+        c = Obstacles2D(p, pos, B.SCENARIOS[case["scenario"]])
     elif b == "spheres":
         from cspi.benchmarks import spheres as B
+        from cspi.constraints.spline_collision import SplineCollision
         tasks = torch.load(os.path.join(ASSETS, "tasks", "spheres.pt"))
         task, cost = B.load(case["split"])
-        p = B.SplineProblem(model, norm, task, cost, tasks["q_start"][case["task"]], tasks["q_goal"][case["task"]])
-        decode = norm.unnormalize
-    elif b == "orient":
-        from cspi.benchmarks import orient as B
-        from cspi.benchmarks.mpd import planning_task
-        tasks = torch.load(os.path.join(ASSETS, "tasks", "orient.pt"))
         qs, qg = tasks["q_start"][case["task"]], tasks["q_goal"][case["task"]]
-        p = B.OrientProblem(model, norm, planning_task("spheres").robot, qs.view(1, -1), qg, **pk)
-        decode = p.joints
+        p = policy.condition(torch.cat([qs, qg]).view(1, -1).expand(8, -1))
+        c = SplineCollision(p, task, cost, qs, qg)
+    elif b == "orient":
+        from cspi.benchmarks.mpd import planning_task
+        from cspi.constraints.orientation import OrientationLock
+        tasks = torch.load(os.path.join(ASSETS, "tasks", "orient.pt"))
+        qs, qg = tasks["q_start"][case["task"]].view(1, -1), tasks["q_goal"][case["task"]].view(1, -1)
+        p = policy.condition(torch.cat([qs, qg], -1))
+        c = OrientationLock(p, planning_task("spheres").robot, qs, **pk)
     else:
         from cspi.benchmarks import shelf as B
         from cspi.benchmarks.mpd import planning_task
+        from cspi.constraints.chunk_collision import ChunkCollision
         task = planning_task("shelf")
         cost = B.scenario_cost(task, case["scenario"])
         q = torch.load(os.path.join(ASSETS, "tasks", "shelf.pt"))["scenarios"][case["scenario"]]["q_start"][case["task"]]
+        q = q.view(1, -1).expand(4, -1).contiguous()
+        cube = torch.tensor(B.SCENARIOS[case["scenario"]][0])
         boxes = B.box_groups(task.df_collision_objects) + B.box_groups(cost.extra_field)
-        p = B.ShelfProblem(model, norm, task, cost, q.view(1, -1).expand(4, -1).contiguous(),
-                           torch.tensor(B.SCENARIOS[case["scenario"]][0]), boxes, **pk)
-        decode = p.joints
+        p = policy.condition(torch.cat([q, cube.view(1, -1).expand(4, -1)], -1))
+        c = ChunkCollision(p, task, cost, q, boxes, **pk)
     torch.manual_seed(case["seed"])
-    x, info = SAMPLERS[case["sampler"]](p, **case["params"])
+    x, info = registry.sampler(case["sampler"])(p, c, **case["params"])
     if post:
-        x = p.slide(x)
-    return decode(x), info["nfe"]
+        x = c.post_project(x)
+    return p.normalizer.unnormalize(x), info["nfe"]
 
 
 # Orient and Shelf project with a strong-Wolfe L-BFGS line search, which turns last-bit floating-point

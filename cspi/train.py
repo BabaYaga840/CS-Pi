@@ -17,7 +17,9 @@ import os
 import torch
 import yaml
 
-from cspi.flow import Normalizer, build_model, cfm_loss, save_prior
+from cspi.policies.flow import cfm_loss, save_prior
+from cspi.policies.networks import build_model
+from cspi.policies.normalizer import Normalizer
 
 
 def windows(dense, context, weight, horizon, repeats):

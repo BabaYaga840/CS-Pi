@@ -1,7 +1,8 @@
 # tab:shelf -- Shelf pick-and-place, 5 obstacle scenarios x 30 tasks (4 samples each).
 # Settings of swept methods: best macro Safe-SR in configs/hp_shelf.yaml (ties: fewer NFE).
 benchmark: shelf
-checkpoint: shelf
+policy: {type: flow, checkpoint: shelf}
+constraint: {type: chunk_collision, proj_steps: 6, beta: 1.0, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
 logl_cap: 400                     # chunks scored per scenario
 table:
@@ -11,9 +12,9 @@ methods:
   CS-Pi:           {sampler: cspi, k: 50.0, k_max: 5, tau: 1.0e-3, step_size: 0.1}
   Projection:      {sampler: projection, tau: 1.0e-3, step_size: 0.1}
   Rejection:       {sampler: rejection, budget: 100, tau: 1.0e-3, step_size: 0.1}
-  Guidance:        {sampler: guidance, alpha: 0.1, step_size: 0.1, problem: {post_slide: true}}
-  Trust:           {sampler: trust, w: 0.05, j_max: 5, stop_tol: 1.0e-3, step_size: 0.1, problem: {post_slide: true}}
+  Guidance:        {sampler: guidance, alpha: 0.1, step_size: 0.1, post_project: true}
+  Trust:           {sampler: trust, w: 0.05, j_max: 5, stop_tol: 1.0e-3, step_size: 0.1, post_project: true}
   Unguided:        {sampler: unguided, step_size: 0.1}
   SafeFlowMatcher: {sampler: safeflowmatcher, T_p: 10, T_c: 8, alpha: 0.07, eps: 5.0, rho: 0.7, state: tweedie,
-                    problem: {cbf_groups: obs+jl+self}}
-  SafeDiffuser:    {sampler: safediffuser, n_steps: 10, lam: 200.0, state: tweedie, problem: {cbf_groups: obs+jl}}
+                    constraint: {cbf_groups: obs+jl+self}}
+  SafeDiffuser:    {sampler: safediffuser, n_steps: 10, lam: 200.0, state: tweedie, constraint: {cbf_groups: obs+jl}}

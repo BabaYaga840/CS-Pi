@@ -1,6 +1,7 @@
 # tab:hp-spheres -- sweeps on Sphere-Avoid (in-distribution; same protocol as tab_spheres.yaml).
 benchmark: spheres
-checkpoint: spheres
+policy: {type: flow, checkpoint: spheres}
+constraint: {type: spline_collision, proj_steps: 10, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [id]
 logl_cap: null
 table:

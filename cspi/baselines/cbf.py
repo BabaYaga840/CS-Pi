@@ -17,8 +17,8 @@ SafeDiffuser    : the QP filter at every one of n_steps Euler steps.
 SafeFlowMatcher : T_p plain Euler steps (prediction), then flow time restarts at 0 and T_c
                   correction steps follow the vanishing field alpha (1 - t) v under the filter.
 
-The benchmark supplies problem.barrier_rows(x) -> (b (B, R), A (B, R, n)): barrier values and
-their Jacobian with respect to the flattened normalized sample.
+The constraint supplies constraint.barrier_rows(x) -> (b (B, R), A (B, R, n)): barrier values and
+their Jacobian with respect to the flattened normalized sample; the policy must expose velocity(x, t).
 """
 import math
 
@@ -107,10 +107,10 @@ def solve_qp(v, A, c, w=None, n_outer=8):
 # Samplers
 # ---------------------------------------------------------------------------
 
-def _filter(p, x, v, t, cond, lam, eps, rho, delta, state, slack, t_w, w_scale):
+def _filter(constraint, x, v, t, cond, lam, eps, rho, delta, state, slack, t_w, w_scale):
     x_eval = x + (1.0 - t) * v if state == "tweedie" else x
     with torch.enable_grad():
-        b, A = p.barrier_rows(x_eval)
+        b, A = constraint.barrier_rows(x_eval)
     if state == "tweedie":
         A = A * (1.0 - t)
     if cond == "expK":
@@ -130,32 +130,30 @@ def _filter(p, x, v, t, cond, lam, eps, rho, delta, state, slack, t_w, w_scale):
 
 
 @torch.no_grad()
-def safediffuser(p, n_steps=10, lam=1.0, delta=0.0, state="ode", slack=0.0):
+def safediffuser(policy, constraint, n_steps=10, lam=1.0, delta=0.0, state="ode", slack=0.0):
     """SafeDiffuser (Xiao et al., 2023), exponential class-K barrier condition at every Euler step."""
-    nfe0, x, dt, t = p.nfe, p.noise(), 1.0 / n_steps, 0.0
+    nfe0, x, dt, t = policy.nfe, policy.noise(), 1.0 / n_steps, 0.0
     for _ in range(n_steps):
-        v = p.velocity(x, t)
-        x = x + _filter(p, x, v, t, "expK", lam, 0.0, 1.0, delta, state, slack, 0.9, 200.0) * dt
+        v = policy.velocity(x, t)
+        x = x + _filter(constraint, x, v, t, "expK", lam, 0.0, 1.0, delta, state, slack, 0.9, 200.0) * dt
         t += dt
-    return x, dict(nfe=p.nfe - nfe0)
+    return x, dict(nfe=policy.nfe - nfe0)
 
 
 @torch.no_grad()
-def safeflowmatcher(p, T_p=1, T_c=10, alpha=2.0, eps=0.5, rho=0.9, delta=0.0, state="ode", slack=0.0,
+def safeflowmatcher(policy, constraint, T_p=1, T_c=10, alpha=2.0, eps=0.5, rho=0.9, delta=0.0, state="ode", slack=0.0,
                     t_w=0.9, w_scale=200.0):
     """SafeFlowMatcher (Algorithm 1): prediction pass, then a filtered correction pass with the
     vanishing time-scaled field alpha (1 - t) v and the finite-time barrier condition."""
-    nfe0, x = p.nfe, p.noise()
+    nfe0, x = policy.nfe, policy.noise()
     dt, t = 1.0 / T_p, 0.0
     for _ in range(T_p):
-        x = x + p.velocity(x, t) * dt
+        x = x + policy.velocity(x, t) * dt
         t += dt
     dt, t = 1.0 / T_c, 0.0
     for _ in range(T_c):
-        v = alpha * (1.0 - t) * p.velocity(x, t)
-        x = x + _filter(p, x, v, t, "finite_time", 0.0, eps, rho, delta, state, slack, t_w, w_scale) * dt
+        v = alpha * (1.0 - t) * policy.velocity(x, t)
+        x = x + _filter(constraint, x, v, t, "finite_time", 0.0, eps, rho, delta, state, slack, t_w, w_scale) * dt
         t += dt
-    return x, dict(nfe=p.nfe - nfe0)
+    return x, dict(nfe=policy.nfe - nfe0)
 
-
-SAMPLERS = dict(safediffuser=safediffuser, safeflowmatcher=safeflowmatcher)

@@ -14,35 +14,43 @@ while x violates the constraint (at most K_max times):
 if x still violates the constraint: x <- P(x)  terminal projection
 ```
 
-The whole method is `cspi()` in [`cspi/samplers.py`](cspi/samplers.py) (about 40 lines). Every
-baseline in the paper (unguided, projection, rejection, gradient guidance, Trust Sampling,
-SafeDiffuser, SafeFlowMatcher) is written once against the same small `Problem` interface, and each
-benchmark only supplies its prior, its constraint and its projection `P`.
+The whole method is `cspi()` in [`cspi/core/algorithm.py`](cspi/core/algorithm.py) (about 50 lines). It takes
+a **policy** and a **constraint** through two small contracts, so it runs on any flow or diffusion policy
+that can restart sampling from an intermediate noise level. Every baseline in the paper (unguided,
+projection, rejection, gradient guidance, Trust Sampling, SafeDiffuser, SafeFlowMatcher) is written
+against the same contracts, and every experiment is one YAML file that names its benchmark, policy,
+constraint and methods. **To use CS-Pi with your own policy or constraint, read
+[`FOR_AGENTS.md`](FOR_AGENTS.md)** (written for both AI agents and people).
+
+```python
+from cspi import FlowPolicy, cspi
+policy = FlowPolicy(my_velocity_fn, horizon=16, action_dim=2, normalizer=my_norm).condition(obs)
+x, info = cspi(policy, my_constraint(policy), k=20.0, k_max=5, tau=0.01)
+```
 
 ## Repository layout
 
 ```
 cspi/
-  flow.py          flow-matching networks, normalizer, OT-CFM loss, Euler solver, checkpoint I/O
-  samplers.py      Problem interface; CS-Pi, unguided, projection, rejection, guidance, Trust Sampling
-  cbf.py           SafeDiffuser and SafeFlowMatcher (CBF-QP safety filters) and their QP solver
+  policies/        policy contract (base.py); FlowPolicy, DDIMPolicy adapter, networks, normalizer
+  constraints/     constraint contract (base.py); the paper's constraints and projections
+  baselines/       unguided / projection / rejection, guidance / Trust Sampling, SafeDiffuser / SafeFlowMatcher
+  core/            CS-Pi (algorithm.py), YAML runner (run.py), tables (tables.py), name registry
+  benchmarks/      environments, tasks, rollouts and metrics: avoid2d, spheres, orient, shelf (+ mpd.py glue)
   loglik.py        exact log-likelihood of a sample under the prior (the "logL" columns)
-  benchmarks/
-    avoid2d.py     2D Avoidance: point robot, 6 obstacle scenarios, support metric
-    mpd.py         shared Franka Panda glue on MPD: planning task, collision cost, projections, rollout
-    spheres.py     Sphere-Avoid: whole-trajectory planning around 10 / 16 spheres
-    orient.py      3D-Orient: reach the goal with a fixed end-effector orientation
-    shelf.py       Shelf pick-and-place with unseen obstacle boxes
-  run.py           runs one config (one paper table / figure): python -m cspi.run configs/<name>.yaml
-  tables.py        prints the table of a config:              python -m cspi.tables configs/<name>.yaml
   figures.py       analyses of saved rollouts (n dynamics, fallback, smoothness)
   train.py         trains a prior:                            python -m cspi.train configs/train/<name>.yaml
-configs/           one YAML per table / figure (methods x units, sweeps as lists), configs/train/ for priors
+configs/           one YAML per experiment (paper table / figure / sweep), configs/train/ for priors
 eval.sh            runs every inference experiment (locally or as SLURM arrays), then prints all tables
 train.sh           trains the four priors
+examples/          your own policy and constraint, in Python and through a YAML
+FOR_AGENTS.md      contracts, YAML schema, every hyperparameter, recipes for new policies / constraints / benchmarks
 scripts/download_assets.py   checkpoints, evaluation tasks and training data from the Hugging Face Hub
 third_party/mpd.patch        four small fixes to MPD needed by the Panda benchmarks
 ```
+
+One experiment by hand: `python -m cspi.core.run configs/<name>.yaml` (add `--list` / `--cell i` for one
+cell), then `python -m cspi.core.tables configs/<name>.yaml`.
 
 ## Setup
 

@@ -1,0 +1,15 @@
+# Example: a user-supplied policy loader ("package.module:function") on the 2D Avoidance benchmark,
+# with tab_d3il.yaml's CS-Pi and Projection settings on a small budget. Run from the repo root:
+#   python -m cspi.core.run configs/examples/custom_policy_avoid2d.yaml
+benchmark: avoid2d
+policy: {type: "examples.custom_policy:my_policy_loader", checkpoint: avoid2d}
+constraint: {type: obstacles_2d, margin: 0.01}
+units: [left, cluttered]
+eval: {n_seeds: 2, n_episodes: 2}
+logl: false
+table:
+  columns: {Safe-SR: success, NFE: nfe}
+  percent: [success]
+methods:
+  CS-Pi:      {sampler: cspi, k: 20.0, k_max: 5, tau: 0.01, step_size: 0.5}
+  Projection: {sampler: projection, tau: 0.01, step_size: 1.0}

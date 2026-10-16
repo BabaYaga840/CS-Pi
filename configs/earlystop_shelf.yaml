@@ -1,7 +1,8 @@
 # CS-Pi stopping rules on Shelf (same rules as earlystop_d3il.yaml). K_max = 20 rather than the table's 5,
 # so that the rules have iterations to cut (patience needs more than 5).
 benchmark: shelf
-checkpoint: shelf
+policy: {type: flow, checkpoint: shelf}
+constraint: {type: chunk_collision, proj_steps: 6, beta: 1.0, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [clutter_combo, tall_table_pillar, two_flankers_top, mid_rung_neighbor_E, low_rung_neighbor_E]
 logl: false
 table:

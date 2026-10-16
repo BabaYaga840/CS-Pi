@@ -1,7 +1,8 @@
 # Terminal projection on vs. off (2D). "On" is tab_d3il.yaml's CS-Pi row; this is the same setting without
 # the terminal projection, so chunks still infeasible after K_max iterations are executed as sampled.
 benchmark: avoid2d
-checkpoint: avoid2d
+policy: {type: flow, checkpoint: avoid2d}
+constraint: {type: obstacles_2d, margin: 0.01, guide_temperature: 0.02, guide_margin: 0.005}
 units: [left, right, both, cluttered, narrow_passage, narrower_passage]
 eval: {n_seeds: 40, n_episodes: 5}
 logl_cap: 400

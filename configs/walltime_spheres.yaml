@@ -1,6 +1,7 @@
 # tab:walltime (Spheres column) -- wall-clock per task (8 samples); one process on one node.
 benchmark: spheres
-checkpoint: spheres
+policy: {type: flow, checkpoint: spheres}
+constraint: {type: spline_collision, proj_steps: 10, tau: 1.0e-3, cbf_groups: obs+jl}
 methods_from: tab_spheres.yaml
 only: [CS-Pi, Trust, Projection, Guidance, Unguided, SafeDiffuser, SafeFlowMatcher]
 units: [id]

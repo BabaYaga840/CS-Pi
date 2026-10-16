@@ -1,7 +1,8 @@
 # tab:d3il-main -- 2D Avoidance, 6 scenarios x 200 closed-loop rollouts (40 seeds x 5 episodes).
 # Settings of swept methods: best macro Safe-SR in configs/hp_d3il.yaml (ties: fewer NFE).
 benchmark: avoid2d
-checkpoint: avoid2d
+policy: {type: flow, checkpoint: avoid2d}
+constraint: {type: obstacles_2d, margin: 0.01, guide_temperature: 0.02, guide_margin: 0.005}
 units: [left, right, both, cluttered, narrow_passage, narrower_passage]
 eval: {n_seeds: 40, n_episodes: 5}
 logl_cap: 400                     # chunks scored per scenario

@@ -1,6 +1,8 @@
 # tab:walltime (Orient column) -- wall-clock per rollout; one process on one node.
 benchmark: orient
-checkpoint: orient
+policy: {type: flow, checkpoint: orient}
+constraint: {type: orientation_lock, lam_orient: 10.0, lam_ee: 3000.0, lam_jl: 100.0, beta: 1.0e+6,
+             proj_steps: 5, cbf_groups: orient+jl}
 methods_from: tab_orient.yaml
 only: [CS-Pi + EE-prox, Trust, Guidance a=0.03, Unguided, SafeDiffuser, SafeFlowMatcher]
 units: [0]

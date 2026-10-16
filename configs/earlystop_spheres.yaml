@@ -1,6 +1,7 @@
 # CS-Pi stopping rules on Sphere-Avoid (same rules as earlystop_d3il.yaml; K_max = 20 as in tab_spheres.yaml).
 benchmark: spheres
-checkpoint: spheres
+policy: {type: flow, checkpoint: spheres}
+constraint: {type: spline_collision, proj_steps: 10, tau: 1.0e-3, cbf_groups: obs+jl}
 units: [id, ood]
 logl: false
 table:

@@ -1,6 +1,7 @@
 # tab:hp-2d -- hyperparameter sweeps on 2D Avoidance (same protocol as tab_d3il.yaml).
 benchmark: avoid2d
-checkpoint: avoid2d
+policy: {type: flow, checkpoint: avoid2d}
+constraint: {type: obstacles_2d, margin: 0.01, guide_temperature: 0.02, guide_margin: 0.005}
 units: [left, right, both, cluttered, narrow_passage, narrower_passage]
 eval: {n_seeds: 40, n_episodes: 5}
 logl: false
