@@ -2,7 +2,8 @@
 
 This file is for AI agents (and people) who need to run CS-Pi on a new policy, constraint or task
 without reading the whole codebase. Read sections 1–3 before touching code. Section 6 is the
-hyperparameter reference.
+hyperparameter reference. Section 7 shows, step by step, how to build your own policy and
+constraint.
 
 ## 1. Mental model
 
@@ -257,18 +258,264 @@ benchmark uses.
 | orient | `ee_prox` (false: compute `ee_ref` from one unguided rollout), `n_tasks` (all 30) | task seeds `0, 1, 2` |
 | shelf | `seed` (42), `tau` (1e-3, success threshold), `n_tasks` (all 30) | scenario names |
 
-## 7. Recipes
+## 7. Build your own policy and constraint
 
-**Run CS-Pi on your policy in plain Python** (no benchmark, no YAML):
+This section shows how to connect your own policy and your own constraint to CS-Pi. Do the steps
+in order. Each step ends with a check.
+
+### 7.1 Terms
+
+- **Model space**: the space in which the policy makes samples. If the policy has a normalizer,
+  this space is normalized. CS-Pi measures all distances in this space.
+- **Physical space**: the units of your environment, for example metres or radians. The
+  `normalizer` converts between model space and physical space.
+- **Unbound policy**: the loaded network, with no observation attached.
+- **Bound policy**: a policy attached to one batch of observations by `condition(obs)`. Samplers
+  accept only bound policies.
+- **Decision**: one call of a sampler, for example one plan step of a receding-horizon rollout.
+- **Context**: the data that your environment knows at a decision, for example the current state
+  or the obstacle positions. The constraint gets the context when you construct it.
+- **Projection (P)**: a function that moves a sample onto the feasible set, or towards it.
+
+### 7.2 Construct the policy
+
+Select one of three paths. Use the first path that agrees with your model.
+
+**Path A: flow-matching model.** Use this path if your network predicts a velocity
+`v(x, t, obs)` and t = 0 is noise. Wrap the network in `FlowPolicy`:
 
 ```python
-from cspi import FlowPolicy, ActionSpaceConstraint, cspi
-policy = FlowPolicy(my_velocity_fn, horizon=H, action_dim=d, normalizer=my_norm).condition(obs)
-x, info = cspi(policy, MyConstraint(policy, ...), k=20.0, k_max=5, tau=1e-3, step_size=0.1)
-actions = policy.normalizer.unnormalize(x)
+from cspi import FlowPolicy, Normalizer
+
+norm = Normalizer("meanstd", act_mean, act_std, obs_mean, obs_std)   # or ("minmax", act_lo, act_hi, obs_lo, obs_hi)
+policy = FlowPolicy(lambda x, t, obs: net(x, t, obs), horizon=H, action_dim=d, normalizer=norm)
 ```
 
-`python examples/custom_policy.py` runs a complete toy example.
+- `x` has the shape (B, H, d). `t` has the shape (B,). `obs` is the normalized observation
+  (B, obs_dim).
+- `act_mean` and `act_std` have the shape (d,). `obs_mean` and `obs_std` have the shape (obs_dim,).
+- If your network has no normalization, set `normalizer=None`. The policy then uses the identity map.
+- If your model uses t = 1 for noise, invert the time: `lambda x, t, obs: -net(x, 1 - t, obs)`.
+
+**Path B: diffusion model that predicts noise (ε).** Wrap the network in `DDIMPolicy`:
+
+```python
+from cspi import DDIMPolicy
+
+policy = DDIMPolicy(lambda x, i, obs: eps_net(x, i, obs), alphas_cumprod, horizon=H, action_dim=d,
+                    normalizer=norm)
+```
+
+- `i` is the integer training timestep, shape (B,), dtype `torch.long`. `alphas_cumprod` is the
+  training schedule, shape (T,).
+- This path supplies no `velocity`. Guidance, Trust Sampling and the CBF baselines do not operate
+  with it. CS-Pi, projection, rejection and unguided operate.
+
+**Path C: any other model.** Subclass `Policy` and write the methods below. This template is
+complete. Replace the update rule in `denoise` and the formula in `renoise` with those of your model.
+
+```python
+import copy
+
+import torch
+
+from cspi.policies.base import Policy, full_steps, partial_steps
+
+
+class MyPolicy(Policy):
+
+    def __init__(self, net, horizon, action_dim, normalizer):
+        self.net, self.horizon, self.action_dim = net, horizon, action_dim
+        self.normalizer = normalizer
+
+    def condition(self, obs):                       # obs: raw observations (B, obs_dim)
+        bound = copy.copy(self)                     # return a NEW object; do not change self
+        bound.obs_n = self.normalizer.normalize_obs(obs)
+        bound.shape = (obs.shape[0], self.horizon, self.action_dim)
+        bound.nfe = 0
+        return bound
+
+    def noise(self):                                # one draw at t = 0
+        return torch.randn(self.shape, device=self.obs_n.device)
+
+    def denoise(self, x, t0, step_size=0.1):        # move x from time t0 to t = 1
+        n = full_steps(step_size) if t0 == 0.0 else partial_steps(t0, step_size)
+        dt, t = (1.0 - t0) / n, t0
+        for _ in range(n):
+            x = x + self.velocity(x, t) * dt        # your update rule
+            t += dt
+        return x
+
+    def renoise(self, x1, t, eps=None):             # put a clean x1 back at time t
+        return x1 * t + (eps * (1.0 - t) if eps is not None else 0.0)   # your noise schedule
+
+    def velocity(self, x, t):                       # optional: only the gradient and CBF baselines use it
+        self.nfe += 1                               # count EVERY network call
+        return self.net(x, torch.full((x.shape[0],), t, device=x.device), self.obs_n)
+```
+
+Rules for every policy:
+
+- `renoise` and `denoise` must agree. If `x_t = renoise(x1, t, eps)`, then `denoise(x_t, t)` must
+  give a sample of your policy near `x1`. CS-Pi depends on this pair.
+- Increase `nfe` by one for each network call. If you remove `velocity`, increase `nfe` in `denoise`.
+- Keep the time convention: t = 0 is noise, t = 1 is data.
+- `condition` returns a new object. Never change the unbound policy.
+
+**Check the policy:**
+
+```python
+p = policy.condition(obs)                     # obs: raw observations, tensor (B, obs_dim)
+x = p.sample(step_size=0.1)
+assert x.shape == p.shape and p.nfe > 0
+assert torch.allclose(p.renoise(x, 1.0, torch.randn_like(x)), x)
+```
+
+### 7.3 Construct the constraint
+
+A constraint gets the bound policy and the context. It must supply `violation` and `project`.
+Select one of two paths.
+
+**Path A: write the constraint in physical space (recommended).** Subclass
+`ActionSpaceConstraint`. Write `action_violation` and `action_project` on physical actions
+`a = normalizer.unnormalize(x)`. The base class converts to and from model space. This complete
+example keeps every action vector inside a ball:
+
+```python
+import torch
+
+from cspi import ActionSpaceConstraint
+
+
+class StayInBall(ActionSpaceConstraint):
+    """Every action vector a_t (d,) stays inside the ball |a_t - center| <= radius."""
+
+    def __init__(self, policy, center, radius=0.5):         # policy first, then context, then parameters
+        super().__init__(policy)
+        self.center, self.radius = torch.as_tensor(center, dtype=torch.float32), radius
+
+    def action_violation(self, a):                          # (B, H, d) -> (B,); 0 = feasible
+        return torch.relu((a - self.center).norm(dim=-1) - self.radius).sum(-1)
+
+    def action_project(self, a, final=False):               # nearest feasible actions, same shape as a
+        d = a - self.center
+        scale = (self.radius / d.norm(dim=-1, keepdim=True).clamp(min=1e-9)).clamp(max=1.0)
+        return self.center + d * scale
+
+    def action_cost(self, a):                               # optional: guidance and Trust Sampling use it
+        return (torch.relu((a - self.center).norm(dim=-1) - self.radius) ** 2).sum(-1)
+```
+
+**Path B: write the constraint in model space.** Subclass `Constraint` and write `violation(x)` and
+`project(x, final)` on the model-space sample `x`. Use this path in two cases: the projection must
+use the model-space metric, or the decoding from `x` to physical space is more than an unnormalize
+(for example, B-spline control points). `SplineCollision` is the reference.
+
+```python
+from cspi import Constraint
+
+
+class MyModelSpaceConstraint(Constraint):
+
+    def __init__(self, policy, my_context, n_steps=10):
+        super().__init__(policy)                 # sets self.policy and self.norm
+        self.my_context, self.n_steps = my_context, n_steps
+
+    def violation(self, x):                      # (B,) >= 0
+        ...
+
+    def project(self, x, final=False):           # same shape, dtype and device as x
+        ...
+```
+
+Rules for every constraint:
+
+- `violation` returns the shape (B,). The value 0 means feasible. CS-Pi compares the batch maximum
+  with `tau`.
+- `project` returns a tensor with the same shape, dtype and device as `x`, in model space.
+- `project` does not call `torch.randn`. A random call changes the results of all later samples.
+- `project(x, final=True)` is the terminal call. If your projection iterates, give this call a
+  bigger budget.
+- An approximate projection is permitted. The loop repeats until `violation <= tau` or until
+  `k_max` iterations.
+- The constructor takes the bound policy first, then the context as keyword arguments, then the
+  parameters. The YAML runner gives the context and the parameters as keyword arguments.
+- Optional members: `cost` (guidance, Trust Sampling), `barrier_rows` (CBF baselines), `grad_mask`
+  (frozen coordinates), `fallback` and `post_project` (terminal step). §4 defines them.
+
+**Check the constraint:**
+
+```python
+c = StayInBall(p, center=torch.zeros(d), radius=0.5)
+x = p.sample(0.1)
+g = c.project(x, final=True)
+assert g.shape == x.shape
+assert float(c.violation(g).max()) <= 1e-6        # an exact projection gives zero violation
+```
+
+### 7.4 Run CS-Pi in Python
+
+Construct the unbound policy one time. At each decision, bind the policy, construct a new
+constraint, and call the sampler.
+
+```python
+from cspi import cspi
+
+policy = MyPolicy(net, horizon=H, action_dim=d, normalizer=norm)       # unbound, construct one time
+for step in range(n_steps):
+    p = policy.condition(obs)                                           # obs: raw (B, obs_dim)
+    c = StayInBall(p, center=center, radius=0.5)
+    x, info = cspi(p, c, k=20.0, k_max=5, tau=1e-3, step_size=0.1)
+    actions = p.normalizer.unnormalize(x)                               # physical actions (B, H, d)
+    obs = env_step(actions)                                             # your environment
+```
+
+Set the first values of the hyperparameters as follows:
+
+1. Set `step_size` to the step that your policy uses without CS-Pi.
+2. Set `tau` to the largest violation that you accept, in the units of `violation`.
+3. Run with `k_max=1` on observations where the first sample violates the constraint. Read
+   `info["delta_history"]`. Set `k` to the median of these values. A typical correction then
+   gives a rollback depth `n` near 0.5.
+4. Increase `k_max` until the success rate stops increasing. One iteration costs at most
+   `ceil((1 - n) / step_size)` network calls.
+
+`python examples/custom_policy.py` runs a complete toy example of this section.
+
+### 7.5 Connect the policy and the constraint to the YAML runner
+
+The YAML runner needs three parts: a policy loader, a constraint class and a benchmark.
+
+1. Write a loader function. It accepts `device` and returns an unbound policy:
+
+   ```python
+   # my_pkg/policies.py
+   def load(checkpoint, device="cpu"):
+       net, norm = load_my_weights(checkpoint)
+       return MyPolicy(net.to(device).eval(), horizon=16, action_dim=2, normalizer=norm)
+   ```
+
+2. Make sure that the constraint constructor accepts the context keys of your benchmark. §4 lists
+   the context keys of the paper benchmarks. The YAML gives the other parameters.
+3. Use an existing benchmark, or write a benchmark for your environment (§8, "Add a benchmark").
+   Your benchmark passes the context to `make_constraint(p, **context)`.
+4. Name the parts by import string in the experiment YAML:
+
+   ```yaml
+   benchmark: my_pkg.my_bench                                  # module path
+   policy: {type: "my_pkg.policies:load", checkpoint: /path/to/weights.pt}
+   constraint: {type: "my_pkg.constraints:StayInBall", radius: 0.5}
+   units: [default]
+   methods:
+     CS-Pi: {sampler: cspi, k: 20.0, k_max: 5, tau: 1.0e-3, step_size: 0.1}
+   ```
+
+5. Run `python -m cspi.core.run configs/my_experiment.yaml` from the repository root. Python must
+   find `my_pkg`: install it, or add its folder to `PYTHONPATH`.
+
+## 8. Recipes
+
+**Run CS-Pi on your policy in plain Python:** see §7.4.
 
 **Evaluate your policy on a paper benchmark:** write a loader, copy the paper config (e.g.
 `configs/tab_d3il.yaml`), replace its `policy:` line, keep or re-tune the method settings, then
@@ -294,7 +541,7 @@ At each decision, call `p = policy.condition(obs)`, `c = make_constraint(p, **co
 should keep `x` (model-space samples) and `obs` (`p.obs_n`) for the logL metric, plus `nfe`.
 `score=False` excludes a record from logL. Use `avoid2d.py` as the template.
 
-## 8. Gotchas
+## 9. Gotchas
 
 - **Panda benchmarks are CPU-only.** The FK library (torchkin) keeps internal CPU tensors.
   `cspi/benchmarks/mpd.py` must be imported before anything from `torch_robotics` (it puts MPD on
@@ -313,7 +560,7 @@ should keep `x` (model-space samples) and `obs` (`p.obs_n`) for the logL metric,
 - **Lists in YAML are sweeps** (see §5).
 - **Finished cells are skipped.** Delete `results/<config>/<variant>/<unit>.json` to rerun one.
 
-## 9. Checks
+## 10. Checks
 
 ```bash
 python -m pytest tests/test_api.py -q        # contracts, toy flow + DDIM policies, YAML expansion (seconds, no assets)
